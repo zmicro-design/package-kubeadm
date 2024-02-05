@@ -180,11 +180,13 @@ prepare() {
   # reference: https://blog.csdn.net/p243679396/article/details/107416875
   # fix: [preflight] Running pre-flight checks => [WARNING FileExisting-socat]: socat not found in system path
   if [ "$(os::has_command socat)" != "true" ]; then
+    pm update -y
     pm install -y socat
   fi
 
   if [ "$(os::has_command conntrack)" != "true" ]; then
     # fix: [preflight] Running pre-flight checks =>  [ERROR FileExisting-conntrack]: conntrack not found in system path
+    pm update -y
     pm install -y conntrack
   fi
 
