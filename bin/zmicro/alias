@@ -1,19 +1,150 @@
 #!/bin/bash
 
+# @TODO
 export PACKAGE_NAME="kubeadm"
+export PACKAGE_DIR="$ZMICRO_PACKAGES_PATH/$PACKAGE_NAME"
+
 import "$ZMICRO_PACKAGES_PATH/$PACKAGE_NAME/config"
 import "$ZMICRO_PACKAGES_PATH/$PACKAGE_NAME/core"
 
 help() {
   echo "Usage:"
-  echo "  zmicro kubeadm <args ...>"
+  echo "  zmicro kubeadm <master|worker> <args ...>"
   echo ""
 
-  kubeadm --help
+  echo "Master:"
+  echo "  zmicro kubeadm master init                - Initialize kubeadm master node"
+  echo "  zmicro kubeadm master reset               - Reset kubeadm master node"
+  echo "  zmicro kubeadm master create join-token   - Create join token for worker node"
+  echo ""
+  echo "Worker:"
+  echo "  zmicro kubeadm worker join <args ...>     - Join worker node to master node"
+  echo "  zmicro kubeadm worker reset               - Reset kubeadm worker node"
+  echo ""
+  echo ""
+  echo "Example:"
+  echo "  In Master Node:"
+  echo "    zmicro kubeadm master init"
+  echo "    zmicro kubeadm master create join-token"
+  echo ""
+  echo "  In Worker Node:"
+  echo "    zmicro kubeadm worker join <args ...>"
 }
 
 version() {
   kubeadm version
+}
+
+generate_config() {
+  if [ -f "$PACKAGE_CORE_SERVICE_CONFIG_DIR/config.yaml" ]; then
+    log::info "[$(timestamp)] kubeadm config file already exists => $PACKAGE_CORE_SERVICE_CONFIG_PATH"
+    return
+  fi
+
+  if [ ! -d "$PACKAGE_CORE_SERVICE_CONFIG_DIR" ]; then
+    sudo mkdir -p $PACKAGE_CORE_SERVICE_CONFIG_DIR
+  fi
+
+  if [ -z "$KUBE_API_SERVER_HOST" ]; then
+    os::inquirer KUBE_API_SERVER_HOST text "Kube API Server Host" true
+  fi
+
+  if [ -z "$KUBE_API_SERVER_PORT" ]; then
+    os::inquirer KUBE_API_SERVER_PORT text "Kube API Server Port" false "6443"
+  fi
+
+  log::info "[$(timestamp)] generating kubeadm config file => $PACKAGE_CORE_SERVICE_CONFIG_PATH ..."
+  local tmp_file=$(os::tmp_file)
+  cat $PACKAGE_DIR/conf/config.yaml \
+    | sed "s|{{KUBE_VERSION}}|${PACKAGE_CORE_VERSION#v}|g" \
+    | sed "s|{{KUBE_API_SERVER_HOST}}|$KUBE_API_SERVER_HOST|g" \
+    | sed "s|{{KUBE_API_SERVER_PORT}}|$KUBE_API_SERVER_PORT|g" >$tmp_file
+  sudo mv $tmp_file $PACKAGE_CORE_SERVICE_CONFIG_PATH
+
+  log::info "[$(timestamp)] kubeadm config file generated => $PACKAGE_CORE_SERVICE_CONFIG_PATH"
+  sudo cat $PACKAGE_CORE_SERVICE_CONFIG_PATH
+}
+
+generate_images() {
+  log::info "[$(timestamp)] generating kubeadm images list ..."
+  kubeadm config images list --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
+
+  log::info "[$(timestamp)] kubeadm images pull ..."
+  kubeadm config images pull --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
+}
+
+master_initialize() {
+  log::info "[$(timestamp)] generate kubeadm config file ..."
+  generate_config
+
+  log::info "[$(timestamp)] pull images ..."
+  generate_images
+
+  lof::info "[$(timestamp)] kubeadm init ..."
+  kubeadm init --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
+}
+
+master_create() {
+  local opt=$1
+  case $opt in
+  join-token)
+    kubeadm token create --print-join-command
+    ;;
+  *)
+    help
+    ;;
+  esac
+}
+
+master() {
+  local opt=$1
+  case $opt in
+  init)
+    master_initialize
+    ;;
+  reset)
+    kubeadm reset
+    ;;
+  create)
+    master_create
+    ;;
+  *)
+    help
+    ;;
+  esac
+}
+
+worker() {
+  local opt=$1
+  case $opt in
+  join)
+    if [ -z "$2" ]; then
+      log::error "[$(timestamp)] please generate join token from master node with: zmicro kubeadm master create join-token"
+      return 1
+    fi
+    
+    # example: kubeadm join 10.49.168.104:6443 \
+    #   --token n2ljtn.3ngyj3ldvnvvobci \
+    #   --discovery-token-ca-cert-hash sha256:a8c8824063da075252a4216da9bc01c95cc7c2fac53d8d6d3ae6f5cac91923d4
+    #
+    kubeadm join ${@:2}
+    ;;
+  reset)
+    kubeadm reset
+    ;;
+  *)
+    help
+    ;;
+  esac
+}
+
+# reference: 
+#   - https://blog.frognew.com/2023/12/kubeadm-install-kubernetes-1.29.html
+prepare() {
+  if [ "$(os::has_command containerd)" != "true" ]; then
+    log::info "[$(timestamp)] containerd is not installed, installing ..."
+    zmicro package install containerd
+  fi
 }
 
 core() {
@@ -32,8 +163,18 @@ core() {
   -v | --version | version)
     version
     ;;
+  master)
+    prepare
+
+    master ${@:2}
+    ;;
+  worker)
+    prepare
+    
+    worker ${@:2}
+    ;;
   *)
-    kubeadm "$@"
+    help
     ;;
   esac
 }
