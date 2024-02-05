@@ -1,5 +1,5 @@
 NAME=kubeadm
-VERSION=v0.0.6
+VERSION=v0.0.7
 MODULE=package
 DESCRIPTION="Zero's Service Manager"
 HOMEPAGE="https://github.com/zcorky/zmicro"
