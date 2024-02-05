@@ -58,10 +58,10 @@ generate_config() {
 
   log::info "[$(timestamp)] generating kubeadm config file => $PACKAGE_CORE_SERVICE_CONFIG_PATH ..."
   local tmp_file=$(os::tmp_file)
-  cat $PACKAGE_DIR/conf/config.yaml \
-    | sed "s|{{KUBE_VERSION}}|${PACKAGE_CORE_VERSION#v}|g" \
-    | sed "s|{{KUBE_API_SERVER_HOST}}|$KUBE_API_SERVER_HOST|g" \
-    | sed "s|{{KUBE_API_SERVER_PORT}}|$KUBE_API_SERVER_PORT|g" >$tmp_file
+  cat $PACKAGE_DIR/conf/config.yaml |
+    sed "s|{{KUBE_VERSION}}|${PACKAGE_CORE_VERSION#v}|g" |
+    sed "s|{{KUBE_API_SERVER_HOST}}|$KUBE_API_SERVER_HOST|g" |
+    sed "s|{{KUBE_API_SERVER_PORT}}|$KUBE_API_SERVER_PORT|g" >$tmp_file
   sudo mv $tmp_file $PACKAGE_CORE_SERVICE_CONFIG_PATH
 
   log::info "[$(timestamp)] kubeadm config file generated => $PACKAGE_CORE_SERVICE_CONFIG_PATH"
@@ -135,7 +135,7 @@ worker() {
       log::error "[$(timestamp)] please generate join token from master node with: zmicro kubeadm master create join-token"
       return 1
     fi
-    
+
     # example: kubeadm join 10.49.168.104:6443 \
     #   --token n2ljtn.3ngyj3ldvnvvobci \
     #   --discovery-token-ca-cert-hash sha256:a8c8824063da075252a4216da9bc01c95cc7c2fac53d8d6d3ae6f5cac91923d4
@@ -151,7 +151,7 @@ worker() {
   esac
 }
 
-# reference: 
+# reference:
 #   - https://blog.frognew.com/2023/12/kubeadm-install-kubernetes-1.29.html
 prepare() {
   if [ "$(os::has_command containerd)" != "true" ]; then
@@ -185,6 +185,40 @@ prepare() {
     # fix: [preflight] Running pre-flight checks =>  [ERROR FileExisting-conntrack]: conntrack not found in system path
     pm install -y conntrack
   fi
+
+  # reference:
+  #   - https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
+  #
+  if [ "$(os::has_command systemctl)" != "true" ]; then
+    log::error "[$(timestamp)] cannot found systemctl command, please install systemd first."
+    return 1
+  fi
+
+  # install service
+  local systemd_service_dir=/etc/systemd/system
+  local systemd_service_d_dir=/etc/systemd/system/kubelet.service.d
+  local systemd_service_config=$systemd_service_dir/kubelet.service
+  if [ ! -f "$systemd_service_config" ]; then
+    if [ ! -d "$systemd_service_dir" ]; then
+      sudo mkdir -p $systemd_service_dir
+    fi
+
+    log::info "[$(timestamp)][package][$name] copy kubelet.service service to $systemd_service_config ..."
+    sudo cp $PACKAGE_DIR/etc/systemd/system/kubelet.service $systemd_service_config && sudo cp -rf $PACKAGE_DIR/systemd/system/kubelet.service.d $systemd_service_d_dir
+    if [ "$?" != "0" ]; then
+      log::error "[$(timestamp)][package][$name] failed to copy kubelet.service service to $systemd_service_config ."
+      return 1
+    fi
+
+    log::info "[$(timestamp)][package][$name] reload systemd and enable kubelet service ..."
+    sudo systemctl daemon-reload && sudo systemctl enable --now kubelet
+    if [ "$?" != "0" ]; then
+      log::error "[$(timestamp)][package][$name] failed to start containerd service with systemd."
+      return 1
+    fi
+
+    log::success "[$(timestamp)][package][$name] installed service to $systemd_service_config ."
+  fi
 }
 
 core() {
@@ -210,7 +244,7 @@ core() {
     ;;
   worker)
     prepare
-    
+
     worker ${@:2}
     ;;
   *)

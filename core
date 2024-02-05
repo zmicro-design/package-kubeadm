@@ -95,38 +95,6 @@ install() {
   log::info "[$(timestamp)][package][$name] installing ..."
   os::install $source_bin_file $usr_bin_dir $name
 
-  # reference:
-  #   - https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
-  #
-  if [ "$(os::has_command systemctl)" = "true" ]; then
-    # install service
-    local systemd_service_dir=/etc/systemd/system
-    local systemd_service_d_dir=/etc/systemd/system/kubelet.service.d
-    local systemd_service_config=$systemd_service_dir/kubelet.service
-    if [ ! -f "$systemd_service_config" ]; then
-      if [ ! -d "$systemd_service_dir" ]; then
-        sudo mkdir -p $systemd_service_dir
-      fi
-
-      log::info "[$(timestamp)][package][$name] copy kubelet.service service to $systemd_service_config ..."
-      sudo cp $PACKAGE_DIR/etc/systemd/system/kubelet.service $systemd_service_config \
-        && sudo cp -rf $PACKAGE_DIR/systemd/system/kubelet.service.d $systemd_service_d_dir
-      if [ "$?" != "0" ]; then
-        log::error "[$(timestamp)][package][$name] failed to copy kubelet.service service to $systemd_service_config ."
-        return 1
-      fi
-
-      log::info "[$(timestamp)][package][$name] reload systemd and enable kubelet service ..."
-      sudo systemctl daemon-reload && sudo systemctl enable --now kubelet 
-      if [ "$?" != "0" ]; then
-        log::error "[$(timestamp)][package][$name] failed to start containerd service with systemd."
-        return 1
-      fi
-
-      log::success "[$(timestamp)][package][$name] installed service to $systemd_service_config ."
-    fi
-  fi
-
   if [ "$PLUGIN_PACKAGE_INSTALL_MODE" != "test" ]; then
     # clean
     log::info "[$(timestamp)][package][$name] cleaning ..."
