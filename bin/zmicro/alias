@@ -157,6 +157,12 @@ prepare() {
     log::info "[$(timestamp)] kubectl is not installed, installing ..."
     zmicro package install kubectl
   fi
+
+  # crictl is required for "kubeadm config images pull"
+  if [ "$(os::has_command crictl)" != "true" ]; then
+    log::info "[$(timestamp)] crictl is not installed, installing ..."
+    zmicro package install crictl
+  fi
 }
 
 core() {
