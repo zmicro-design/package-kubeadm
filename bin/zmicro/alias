@@ -86,6 +86,10 @@ master_initialize() {
   kubeadm init --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
 }
 
+master_reset() {
+  kubeadm reset --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
+}
+
 master_create() {
   local opt=$1
   case $opt in
@@ -105,7 +109,11 @@ master() {
     master_initialize
     ;;
   reset)
-    kubeadm reset
+    master_reset
+    ;;
+  reinit)
+    master_reset
+    master_initialize
     ;;
   create)
     master_create
