@@ -46,7 +46,7 @@ generate_config() {
   fi
 
   if [ -z "$KUBE_API_SERVER_HOST" ]; then
-    os::inquirer KUBE_API_SERVER_HOST text "Kube API Server Host" true
+    os::inquirer KUBE_API_SERVER_HOST text "Kube API Server Host" true $(net::get_ip_internal | awk '{print $1}')
   fi
 
   if [ -z "$KUBE_API_SERVER_PORT" ]; then
