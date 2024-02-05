@@ -88,7 +88,9 @@ master_initialize() {
 }
 
 master_reset() {
+  set +e
   sudo kubeadm reset --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
+  set -e
 }
 
 master_create() {
