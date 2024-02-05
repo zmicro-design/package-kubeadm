@@ -70,10 +70,10 @@ generate_config() {
 
 generate_images() {
   log::info "[$(timestamp)] generating kubeadm images list ..."
-  kubeadm config images list --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
+  sudo kubeadm config images list --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
 
   log::info "[$(timestamp)] kubeadm images pull ..."
-  kubeadm config images pull --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
+  sudo kubeadm config images pull --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
 }
 
 master_initialize() {
@@ -84,18 +84,18 @@ master_initialize() {
   generate_images
 
   log::info "[$(timestamp)] kubeadm init ..."
-  kubeadm init --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
+  sudo kubeadm init --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
 }
 
 master_reset() {
-  kubeadm reset --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
+  sudo kubeadm reset --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
 }
 
 master_create() {
   local opt=$1
   case $opt in
   join-token)
-    kubeadm token create --print-join-command
+    sudo kubeadm token create --print-join-command
     ;;
   *)
     help
@@ -138,10 +138,10 @@ worker() {
     #   --token n2ljtn.3ngyj3ldvnvvobci \
     #   --discovery-token-ca-cert-hash sha256:a8c8824063da075252a4216da9bc01c95cc7c2fac53d8d6d3ae6f5cac91923d4
     #
-    kubeadm join ${@:2}
+    sudo kubeadm join ${@:2}
     ;;
   reset)
-    kubeadm reset
+    sudo kubeadm reset --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
     ;;
   *)
     help
