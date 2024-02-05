@@ -145,6 +145,16 @@ prepare() {
     log::info "[$(timestamp)] containerd is not installed, installing ..."
     zmicro package install containerd
   fi
+
+  if [ "$(os::has_command kubelet)" != "true" ]; then
+    log::info "[$(timestamp)] kubelet is not installed, installing ..."
+    zmicro package install kubelet
+  fi
+
+  if [ "$(os::has_command kubectl)" != "true" ]; then
+    log::info "[$(timestamp)] kubectl is not installed, installing ..."
+    zmicro package install kubectl
+  fi
 }
 
 core() {
