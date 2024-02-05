@@ -120,7 +120,7 @@ master() {
     master_initialize
     ;;
   create)
-    master_create
+    master_create ${@:2}
     ;;
   *)
     help
