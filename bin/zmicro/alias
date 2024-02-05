@@ -83,6 +83,12 @@ master_initialize() {
   log::info "[$(timestamp)] pull images ..."
   generate_images
 
+  # fix: [preflight] Running pre-flight checks => [WARNING FileExisting-socat]: socat not found in system path
+  pm install -y socat
+
+  # fix: [preflight] Running pre-flight checks =>  [ERROR FileExisting-conntrack]: conntrack not found in system path
+  pm install -y conntrack
+
   log::info "[$(timestamp)] kubeadm init ..."
   sudo kubeadm init --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
 }
