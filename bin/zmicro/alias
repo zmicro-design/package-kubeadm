@@ -89,7 +89,8 @@ master_initialize() {
 
 master_reset() {
   set +e
-  sudo kubeadm reset --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
+  # sudo kubeadm reset --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
+  sudo kubeadm reset
   set -e
 }
 
@@ -143,7 +144,8 @@ worker() {
     sudo kubeadm join ${@:2}
     ;;
   reset)
-    sudo kubeadm reset --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
+    # sudo kubeadm reset --config ${PACKAGE_CORE_SERVICE_CONFIG_PATH}
+    sudo kubeadm reset 
     ;;
   *)
     help
