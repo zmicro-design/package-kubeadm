@@ -204,7 +204,7 @@ prepare() {
     fi
 
     log::info "[$(timestamp)][package][$name] copy kubelet.service service to $systemd_service_config ..."
-    sudo cp $PACKAGE_DIR/etc/systemd/system/kubelet.service $systemd_service_config && sudo cp -rf $PACKAGE_DIR/systemd/system/kubelet.service.d $systemd_service_d_dir
+    sudo cp $PACKAGE_DIR/conf/etc/systemd/system/kubelet.service $systemd_service_config && sudo cp -rf $PACKAGE_DIR/conf/systemd/system/kubelet.service.d $systemd_service_d_dir
     if [ "$?" != "0" ]; then
       log::error "[$(timestamp)][package][$name] failed to copy kubelet.service service to $systemd_service_config ."
       return 1
