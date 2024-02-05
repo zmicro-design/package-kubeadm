@@ -18,6 +18,7 @@ help() {
   echo "  zmicro kubeadm master init                - Initialize kubeadm master node"
   echo "  zmicro kubeadm master reset               - Reset kubeadm master node"
   echo "  zmicro kubeadm master create join-token   - Create join token for worker node"
+  echo "  zmicro kubeadm master reinit              - Reset and Initialize kubeadm master node"
   echo ""
   echo "Worker:"
   echo "  zmicro kubeadm worker join <args ...>     - Join worker node to master node"
