@@ -46,15 +46,12 @@ install() {
 
   # template os
   case $os in
-  macos)
-    pm install -y ipset ipvsadm
-    ;;
   ubuntu)
     pm install -y ipset ipvsadm
     ;;
-  # centos)
-  #   pm install -y mtg3
-  #   ;;
+  centos)
+    pm install -y ipset ipvsadm
+    ;;
   # alpine)
   #   pm install -y mtg4
   #   ;;
@@ -68,9 +65,22 @@ install() {
   #   pm install -y mtg6
   #   ;;
   *)
-    log::error "[$(timestamp)] unsupport os to install `ipvsadm`: $os ($(uname -m))"
+    log::error "[$(timestamp)] unsupport os to install \`ipvsadm\`: $os ($(uname -m))"
     return 1
+    ;;
   esac
+
+  if [ "$(os::has_command ipvsadm)" = "true" ]; then
+    log::info "[$(timestamp)][package][$name] loading kernel modules for ipvs ..."
+    # start up right now
+    sudo modprobe ip_vs
+    sudo modprobe ip_vs_rr
+    sudo modprobe ip_vs_wrr
+    sudo modprobe ip_vs_sh
+
+    # check is ipvs ok
+    # sudo lsmod | grep -e ip_vs -e nf_conntrack
+  fi
 
   # # get latest version
   # log::info "[$(timestamp)][package][$name] checking latest version ..."
