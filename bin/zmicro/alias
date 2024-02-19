@@ -198,6 +198,28 @@ prepare() {
     return 1
   fi
 
+  # start ipvs
+  # reference: https://blog.frognew.com/2023/12/kubeadm-install-kubernetes-1.29.html
+  local modules_load_dir=/etc/modules-load.d
+  local ipvs_conf=$modules_load_dir/ipvs.conf
+  if [ ! -f "$ipvs_conf" ]; then
+    if [ ! -d "$modules_load_dir" ]; then
+      sudo mkdir -p $modules_load_dir
+    fi
+
+    cp $PACKAGE_DIR/conf/$ipvs_conf $ipvs_conf
+
+    log::info "[$(timestamp)][package][$name] loading kernel modules ..."
+    # start up right now
+    sudo modprobe ip_vs
+    sudo modprobe ip_vs_rr
+    sudo modprobe ip_vs_wrr
+    sudo modprobe ip_vs_sh
+
+    # check is ipvs ok
+    # sudo lsmod | grep -e ip_vs -e nf_conntrack
+  fi
+
   # install service
   local systemd_service_dir=/etc/systemd/system
   local systemd_service_d_dir=/etc/systemd/system/kubelet.service.d

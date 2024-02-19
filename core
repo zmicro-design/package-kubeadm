@@ -44,6 +44,34 @@ install() {
   # esac
   # #
 
+  # template os
+  case $os in
+  macos)
+    pm install -y ipset ipvsadm
+    ;;
+  ubuntu)
+    pm install -y ipset ipvsadm
+    ;;
+  # centos)
+  #   pm install -y mtg3
+  #   ;;
+  # alpine)
+  #   pm install -y mtg4
+  #   ;;
+  # archlinux)
+  #   pm install -y mtg5
+  #   ;;
+  # archlinux)
+  #   pm install -y mtg5
+  #   ;;
+  # fedora)
+  #   pm install -y mtg6
+  #   ;;
+  *)
+    log::error "[$(timestamp)] unsupport os to install `ipvsadm`: $os ($(uname -m))"
+    return 1
+  esac
+
   # # get latest version
   # log::info "[$(timestamp)][package][$name] checking latest version ..."
   # local latest_version=$(git::get_remote_latest_tag $PACKAGE_CORE_GIT_REPOSITORY)
